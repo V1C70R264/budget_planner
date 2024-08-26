@@ -14,16 +14,16 @@ class Expenses extends StatefulWidget {
 class _ExpensesState extends State<Expenses> {
   final _depositAmountController = TextEditingController();
   final List<Expense> _registeredExpenses = [
-    Expense(
-        title: 'Learning Programming',
-        amount: 23.45,
-        date: DateTime.now(),
-        category: Category.work),
-    Expense(
-        title: 'Music',
-        amount: 12.89,
-        date: DateTime.now(),
-        category: Category.leisure)
+    // Expense(
+    //     title: 'Learning Programming',
+    //     amount: 23.45,
+    //     date: DateTime.now(),
+    //     category: Category.work),
+    // Expense(
+    //     title: 'Music',
+    //     amount: 12.89,
+    //     date: DateTime.now(),
+    //     category: Category.leisure)
   ];
   void _openAddExpenseOverlay() {
     showModalBottomSheet(
@@ -39,12 +39,12 @@ class _ExpensesState extends State<Expenses> {
   void _obtainExpenseSummary() {
     var depositBalance = double.tryParse(_depositAmountController.text);
     double sumOfAmount = 0;
-   
+
     for (var i = 0; i < _registeredExpenses.length; i++) {
       enteredAmounts.add(_registeredExpenses[i].amount);
       sumOfAmount += _registeredExpenses[i].amount;
     }
-     final  balanceRemained = depositBalance! - sumOfAmount;
+    final balanceRemained = depositBalance! - sumOfAmount;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -83,30 +83,55 @@ class _ExpensesState extends State<Expenses> {
   }
 
   void _depositAmount() {
-    showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-              content: const Text(
-                "Enter Amount ",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
-              ),
-              actions: [
-                TextField(
-                  controller: _depositAmountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                      label: Text('Deposit Amount'), prefixText: "TZS "),
+    if (_depositAmountController.text.isEmpty) {
+      showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+                content: const Text(
+                  "Enter Amount ",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
                 ),
-                Center(
-                  child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text('Okay')),
+                actions: [
+                  TextField(
+                    controller: _depositAmountController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                        label: Text('Deposit Amount'), prefixText: "TZS "),
+                  ),
+                  Center(
+                    child: TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text('Okay')),
+                  )
+                ],
+              ));
+      return;
+    }
+    if (_depositAmountController.text.isNotEmpty) {
+      showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+                content: Text('Deposited Amount: TZS ${_depositAmountController.text}/=', textAlign: TextAlign.center,style: const TextStyle(fontWeight: FontWeight.bold),),
+                actions: [
+                Row(
+                  mainAxisAlignment:MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                        onPressed:(){},
+                        child: const Text('Reset Amount')),
+                    TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Okay'))
+                  ],
                 )
-              ],
-            ));
+                ],
+              ));
+    }
   }
 
   @override
@@ -115,10 +140,10 @@ class _ExpensesState extends State<Expenses> {
       appBar: AppBar(
         title: const Text('Expense Tracker'),
         actions: [
-          IconButton(onPressed: _depositAmount, icon: Icon(Icons.money)),
+          IconButton(onPressed: _depositAmount, icon: const Icon(Icons.money)),
           IconButton(
-              onPressed: _obtainExpenseSummary, icon: Icon(Icons.wallet)),
-          IconButton(onPressed: _openAddExpenseOverlay, icon: Icon(Icons.add))
+              onPressed: _obtainExpenseSummary, icon: const Icon(Icons.wallet)),
+          IconButton(onPressed: _openAddExpenseOverlay, icon: const Icon(Icons.add))
         ],
       ),
       body: Column(

@@ -14,6 +14,7 @@ class NewExpense extends StatefulWidget {
 class _NewExpense extends State<NewExpense> {
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
+
   DateTime? _selectedDate;
   Category _selectedCategory = Category.work;
   final formatter = DateFormat.yMd();
@@ -31,7 +32,7 @@ class _NewExpense extends State<NewExpense> {
   }
 
   void _submitExpenseData() {
-    final enteredAmount = double.tryParse(_amountController.text);
+    final enteredAmount = double.tryParse(_amountController.text); 
     final amountIsInvalid = enteredAmount == null || enteredAmount <= 0;
     if (_titleController.text.trim().isEmpty ||
         amountIsInvalid ||
@@ -39,19 +40,33 @@ class _NewExpense extends State<NewExpense> {
       showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-                title: Text('Invalid Input'),
-                content: Text(
+                title: const Text('Invalid Input'),
+                content: const Text(
                     'Please make sure a valid title, amount, date and category was entered'),
                 actions: [
                   TextButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: Text('Okay'))
+                      child: const Text('Okay'))
                 ],
               ));
       return;
     }
+    // if(currentEnteredAmount! ){
+    //   showDialog(context: context, builder: (ctx) =>
+    //      AlertDialog(
+    //       title: const Text('Error'),
+    //       content:const  Text('The amount you entered is greater than the one available in your wallet'),
+    //       actions: [
+    //         TextButton(onPressed: (){
+    //           Navigator.pop(context);
+    //         }, child: const Text('Okay'))
+    //       ],
+    //      ));
+    //      return;
+    //   }
+    // }
 
     widget.onAddExpense(Expense(
         title: _titleController.text,
@@ -72,13 +87,13 @@ class _NewExpense extends State<NewExpense> {
   @override
   Widget build(context) {
     return Padding(
-        padding: EdgeInsets.fromLTRB(16, 48, 16,16),
+        padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
         child: Column(
           children: [
             TextField(
               controller: _titleController,
               maxLength: 50,
-              decoration: InputDecoration(label: Text('Title')),
+              decoration: const InputDecoration(label: Text('Title')),
             ),
             Row(
               children: [
@@ -86,7 +101,7 @@ class _NewExpense extends State<NewExpense> {
                   child: TextField(
                     controller: _amountController,
                     keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       label: Text('Amount'),
                       prefixText: 'TZS ',
                     ),
@@ -137,9 +152,10 @@ class _NewExpense extends State<NewExpense> {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: Text('Cancel')),
+                    child: const Text('Cancel')),
                 TextButton(
-                    onPressed: _submitExpenseData, child: Text('Save Expense')),
+                    onPressed: _submitExpenseData,
+                    child: const Text('Save Expense')),
               ],
             ),
           ],

@@ -3,8 +3,16 @@ import 'package:intl/intl.dart';
 import 'package:budget_planner/models/expense.dart';
 
 class NewExpense extends StatefulWidget {
-  const NewExpense({super.key, required this.onAddExpense});
+  const NewExpense(
+      {super.key,
+      required this.expenseToEdit,
+      required this.onEditExpense,
+      required this.onAddExpense,
+      required this.currentBalanceRemained});
   final void Function(Expense expense) onAddExpense;
+  final void Function(Expense oldExpense, Expense newExpense) onEditExpense;
+  final double currentBalanceRemained;
+  final Expense? expenseToEdit;
   @override
   State<NewExpense> createState() {
     return _NewExpense();
@@ -13,10 +21,12 @@ class NewExpense extends StatefulWidget {
 
 class _NewExpense extends State<NewExpense> {
   final _titleController = TextEditingController();
-  final _amountController = TextEditingController();
-
+  // final _amountController = TextEditingController();
+  bool isButtonActive = true;
   DateTime? _selectedDate;
   Category _selectedCategory = Category.work;
+  final _formKey = GlobalKey<FormState>();
+
   final formatter = DateFormat.yMd();
   void _showDatePicker() async {
     final now = DateTime.now();
@@ -32,9 +42,18 @@ class _NewExpense extends State<NewExpense> {
   }
 
   void _submitExpenseData() {
-    final enteredAmount = double.tryParse(_amountController.text); 
-    final amountIsInvalid = enteredAmount == null || enteredAmount <= 0;
-    if (_titleController.text.trim().isEmpty ||
+    final enteredAmount = double.tryParse(_amountController.text);
+    final amountIsInvalid = enteredAmount == null ||
+        enteredAmount <= 0 ||
+        enteredAmount > widget.currentBalanceRemained;
+    // if (amountIsInvalid) {
+    //   _formKey.currentState!.validate();
+    //   setState(() {
+    //     isButtonActive = false;
+    //   });
+    //   return;
+    // }
+    if (_titleController.text.isEmpty ||
         amountIsInvalid ||
         _selectedDate == null) {
       showDialog(
@@ -67,7 +86,6 @@ class _NewExpense extends State<NewExpense> {
     //      return;
     //   }
     // }
-
     widget.onAddExpense(Expense(
         title: _titleController.text,
         amount: enteredAmount,
@@ -77,6 +95,22 @@ class _NewExpense extends State<NewExpense> {
     Navigator.pop(context);
   }
 
+  late TextEditingController _amountController;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _amountController = TextEditingController();
+    _amountController.addListener(() {
+      final isButtonActive = double.tryParse(_amountController.text)! <=
+              widget.currentBalanceRemained ||
+          _amountController.text.isEmpty;
+      setState(() {
+        this.isButtonActive = isButtonActive;
+      });
+    });
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -84,81 +118,106 @@ class _NewExpense extends State<NewExpense> {
     super.dispose();
   }
 
+  // void _saveExpense() {
+
+  // }
+
   @override
   Widget build(context) {
-    return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              maxLength: 50,
-              decoration: const InputDecoration(label: Text('Title')),
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      label: Text('Amount'),
-                      prefixText: 'TZS ',
+    return Form(
+      key: _formKey,
+      child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _titleController,
+                maxLength: 50,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'This field is required';
+                  }
+                  return null;
+                },
+                decoration: const InputDecoration(label: Text('Title')),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _amountController,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        final parsedValue = double.tryParse(value ?? '');
+                        if (parsedValue == null) {
+                         return 'This field is required';
+                        }
+                        if (parsedValue > widget.currentBalanceRemained) {
+                          return 'Insufficient Balance \n(TZS ${widget.currentBalanceRemained}) Remained';
+                        }
+                        return null;
+                      },
+                      decoration: const InputDecoration(
+                        label: Text('Amount'),
+                        prefixText: 'TZS ',
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(
-                  height: 16,
-                ),
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(_selectedDate == null
-                          ? 'No Selected Date'
-                          : formatter.format(_selectedDate!)),
-                      IconButton(
-                          onPressed: _showDatePicker,
-                          icon: Icon(Icons.calendar_month))
-                    ],
+                  const SizedBox(
+                    height: 16,
                   ),
-                )
-              ],
-            ),
-            const SizedBox(
-              height: 16,
-            ),
-            Row(
-              children: [
-                DropdownButton(
-                  value: _selectedCategory,
-                  items: Category.values
-                      .map((category) => DropdownMenuItem(
-                          value: category,
-                          child: Text(category.name.toUpperCase())))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                  },
-                ),
-                const Spacer(),
-                TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(_selectedDate == null
+                            ? 'No Selected Date'
+                            : formatter.format(_selectedDate!)),
+                        IconButton(
+                            onPressed: _showDatePicker,
+                            icon: const Icon(Icons.calendar_month))
+                      ],
+                    ),
+                  )
+                ],
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+              Row(
+                children: [
+                  DropdownButton(
+                    value: _selectedCategory,
+                    items: Category.values
+                        .map((category) => DropdownMenuItem(
+                            value: category,
+                            child: Text(category.name.toUpperCase())))
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      setState(() {
+                        _selectedCategory = value;
+                      });
                     },
-                    child: const Text('Cancel')),
-                TextButton(
-                    onPressed: _submitExpenseData,
-                    child: const Text('Save Expense')),
-              ],
-            ),
-          ],
-        ));
+                  ),
+                  const Spacer(),
+                  TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Cancel')),
+                  TextButton(
+                      onPressed: isButtonActive ? _submitExpenseData : null,
+                      child: const Text('Save Expense')),
+                ],
+              ),
+            ],
+          )),
+    );
   }
 }

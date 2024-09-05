@@ -1,8 +1,15 @@
 import 'package:budget_planner/models/expense.dart';
+import 'package:budget_planner/notification_service.dart';
 import 'package:budget_planner/widgets/expenses_list.dart';
 import 'package:budget_planner/widgets/new_expense.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'dart:async';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class Expenses extends StatefulWidget {
   const Expenses({super.key});
@@ -86,7 +93,7 @@ class _ExpensesState extends State<Expenses> {
         } else {
           // Show error dialog or snackbar
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Insufficient balance for this edit')),
+           const SnackBar(content: Text('Insufficient balance for this edit')),
           );
         }
       }
@@ -97,6 +104,12 @@ class _ExpensesState extends State<Expenses> {
     setState(() {
       _registeredExpenses.add(expense);
     });
+    
+    // Show a notification when an expense is added
+    NotificationService().showStylishNotification();
+    
+    // Or schedule a reminder for tomorrow
+    NotificationService().showStylishNotification();
   }
 
   void _removeExpense(Expense expense) {
@@ -221,17 +234,131 @@ class _ExpensesState extends State<Expenses> {
     );
   }
 
+  Future<void> _generatePDF() async {
+    final pdf = pw.Document();
+
+    // Add the owner's name here
+    const String ownerName = "MONITAFRICA SOLUTIONS COMPANY";
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          double totalDebit = _registeredExpenses.fold(0.0, (sum, expense) => sum + expense.amount);
+          double totalCredit = double.tryParse(_depositAmountController.text) ?? 0.0;
+          double balance = totalCredit - totalDebit;
+
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Expense Receipt', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              pw.Text('Generated on: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}'),
+              pw.SizedBox(height: 30),
+              pw.Text('Credit (Deposit)', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              pw.Divider(),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Initial Deposit'),
+                  pw.Text('TZS ${formatter.format(totalCredit)}'),
+                ],
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text('Debit (Expenses)', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              pw.Divider(),
+              ..._registeredExpenses.map((expense) => pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(expense.title, style:const pw.TextStyle(fontSize: 16)),
+                      pw.Text('TZS ${formatter.format(expense.amount)}', style: const pw.TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                  pw.Text(DateFormat('yyyy-MM-dd HH:mm').format(expense.date), style: pw.TextStyle(color: PdfColors.grey700, fontSize: 12)),
+                  pw.SizedBox(height: 5),
+                ],
+              )).toList(),
+              pw.SizedBox(height: 20),
+              pw.Divider(thickness: 2),
+              pw.SizedBox(height: 10),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Total Credit:', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('TZS ${formatter.format(totalCredit)}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Total Debit:', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('TZS ${formatter.format(totalDebit)}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              pw.SizedBox(height: 10),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Balance:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('TZS ${formatter.format(balance)}', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              pw.Spacer(), // This will push the following content to the bottom
+              pw.Divider(thickness: 1),
+              pw.SizedBox(height: 10),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Issued by:', style: pw.TextStyle(fontSize: 14)),
+                  pw.Text(ownerName, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              pw.SizedBox(height: 20),
+              pw.Center(
+                child: pw.BarcodeWidget(
+                  barcode: pw.Barcode.qrCode(),
+                  data: ownerName,
+                  width: 100,
+                  height: 100,
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Center(
+                child: pw.Text('Scan for owner\'s details', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    // Simulate a download process
+    for (int i = 0; i <= 100; i += 10) {
+      await NotificationService().showProgressNotification(i);
+      await Future.delayed(const Duration(milliseconds: 500)); // Simulate processing time
+    }
+
+    // Save the PDF file
+    final output = await getTemporaryDirectory();
+    final file = File("${output.path}/moneyminder_report.pdf");
+    await file.writeAsBytes(await pdf.save());
+
+    // Show completed notification with file path
+    await NotificationService().showCompletedNotification(file.path);
+  }
+
   @override
   Widget build(context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Expense Tracker'),
+        title: const Text('MoneyMinder'),
         actions: [
           IconButton(onPressed: _depositAmount, icon: const Icon(Icons.money)),
-          IconButton(
-              onPressed: _obtainExpenseSummary, icon: const Icon(Icons.wallet)),
-          IconButton(
-              onPressed: _openAddExpenseOverlay, icon: const Icon(Icons.add))
+          IconButton(onPressed: _obtainExpenseSummary, icon: const Icon(Icons.wallet)),
+          IconButton(onPressed: _generatePDF, icon: const Icon(Icons.print)),
+          IconButton(onPressed: _openAddExpenseOverlay, icon: const Icon(Icons.add))
         ],
       ),
       body: Column(

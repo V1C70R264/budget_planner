@@ -1,7 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:open_file/open_file.dart';
-import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -18,7 +16,7 @@ class NotificationService {
   Future<void> _initializeNotifications() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    const  InitializationSettings initializationSettings =
+    const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
@@ -37,7 +35,7 @@ class NotificationService {
   Future<void> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    final InitializationSettings initializationSettings =
+    const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
@@ -70,30 +68,53 @@ class NotificationService {
   }
 
   Future<void> showProgressNotification(int progress) async {
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'progress_channel',
-      'Progress Notifications',
-      channelDescription: 'Notifications for download progress',
-      importance: Importance.max,
-      priority: Priority.high,
-      onlyAlertOnce: true,
-      showProgress: true,
-      maxProgress: 100,
-      progress: progress,
-    );
+    print("Current progress: $progress");
+
+    late final AndroidNotificationDetails androidPlatformChannelSpecifics;
+    String title;
+    String body;
+
+    if (progress <= 99) {
+     // print("Showing progress notification");
+      androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        'progress_channel',
+        'Progress Notifications',
+        channelDescription: 'Notifications for download progress',
+        importance: Importance.max,
+        priority: Priority.high,
+        onlyAlertOnce: true,
+        showProgress: true,
+        maxProgress: 100,
+        progress: progress,
+      );
+      title = 'Downloading Receipt';
+      body = 'Progress: $progress%';
+    } else {
+     // print("Showing completion notification");
+      androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        'progress_channel',
+        'Progress Notifications',
+        channelDescription: 'Notifications for download progress',
+        importance: Importance.max,
+        priority: Priority.high,
+      );
+      title = 'Receipt Downloaded Successfully';
+      body = 'Tap to open your PDF';
+    }
+
     final NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
+
     await flutterLocalNotificationsPlugin.show(
       0,
-      'Downloading Receipt',
-      'Progress: $progress%',
+      title,
+      body,
       platformChannelSpecifics,
     );
   }
 
   Future<void> showCompletedNotification(String filePath) async {
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'completion_channel',
       'Completion Notifications',
@@ -103,7 +124,7 @@ class NotificationService {
       icon: 'download_complete',
       largeIcon: DrawableResourceAndroidBitmap('download_complete'),
     );
-    final NotificationDetails platformChannelSpecifics =
+    const NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
     await flutterLocalNotificationsPlugin.show(
       1,
@@ -115,10 +136,10 @@ class NotificationService {
   }
 
   Future<void> showBalanceNotification(double remainingBalance, double depositedAmount) async {
-    print("Checking balance: Remaining = $remainingBalance, Deposited = $depositedAmount");
+    //print("Checking balance: Remaining = $remainingBalance, Deposited = $depositedAmount");
     
     if (depositedAmount > 0 && remainingBalance <= depositedAmount / 2) {
-      print("Balance is half or less than half of deposited amount. Showing notification.");
+     // print("Balance is half or less than half of deposited amount. Showing notification.");
       const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
         'balance_alert_channel',
         'Balance Alert Notifications',
@@ -135,7 +156,7 @@ class NotificationService {
         platformChannelSpecifics,
       );
     } else {
-      print("Balance is still above half of deposited amount. No notification shown.");
+      //print("Balance is still above half of deposited amount. No notification shown.");
     }
   }
 }

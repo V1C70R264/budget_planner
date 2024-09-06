@@ -103,13 +103,19 @@ class _ExpensesState extends State<Expenses> {
   void _addExpense(Expense expense) {
     setState(() {
       _registeredExpenses.add(expense);
+      balanceRemained -= expense.amount;
     });
     
+    // Convert deposited amount to double for comparison
+    double depositedAmount = double.tryParse(_depositAmountController.text) ?? 0.0;
+    
     // Show a notification when an expense is added
-    NotificationService().showStylishNotification();
+    if (balanceRemained <= depositedAmount / 2) {
+      NotificationService().showBalanceNotification(balanceRemained, depositedAmount);
+    }
     
     // Or schedule a reminder for tomorrow
-    NotificationService().showStylishNotification();
+    
   }
 
   void _removeExpense(Expense expense) {

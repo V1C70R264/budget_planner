@@ -113,4 +113,29 @@ class NotificationService {
       payload: filePath,
     );
   }
+
+  Future<void> showBalanceNotification(double remainingBalance, double depositedAmount) async {
+    print("Checking balance: Remaining = $remainingBalance, Deposited = $depositedAmount");
+    
+    if (depositedAmount > 0 && remainingBalance <= depositedAmount / 2) {
+      print("Balance is half or less than half of deposited amount. Showing notification.");
+      const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        'balance_alert_channel',
+        'Balance Alert Notifications',
+        channelDescription: 'Notifications for low balance alerts',
+        importance: Importance.max,
+        priority: Priority.high,
+      );
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+      
+      await flutterLocalNotificationsPlugin.show(
+        0,
+        'Balance Alert ⚠️',  // Added caution emoji here
+        'Your balance is TZS ${remainingBalance.toStringAsFixed(2)}/=',
+        platformChannelSpecifics,
+      );
+    } else {
+      print("Balance is still above half of deposited amount. No notification shown.");
+    }
+  }
 }

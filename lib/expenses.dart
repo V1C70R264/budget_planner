@@ -264,7 +264,7 @@ class _ExpensesState extends State<Expenses> {
           },
           child: Text('Deposit Amount'),
           style: ElevatedButton.styleFrom(
-            primary: AppColors.primary,
+            foregroundColor: AppColors.primary,
             padding: EdgeInsets.symmetric(vertical: 15),
             minimumSize: Size(double.infinity, 50),
           ),
@@ -277,7 +277,7 @@ class _ExpensesState extends State<Expenses> {
           },
           child: Text('Reset Amount'),
           style: OutlinedButton.styleFrom(
-            primary: AppColors.error,
+            foregroundColor: AppColors.error,
             side: BorderSide(color: AppColors.error),
             padding: EdgeInsets.symmetric(vertical: 15),
             minimumSize: Size(double.infinity, 50),

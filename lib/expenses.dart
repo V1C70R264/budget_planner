@@ -1,7 +1,9 @@
+import 'package:budget_planner/expense_summary.dart';
 import 'package:budget_planner/models/expense.dart';
 import 'package:budget_planner/notification_service.dart';
 import 'package:budget_planner/widgets/expenses_list.dart';
 import 'package:budget_planner/widgets/new_expense.dart';
+import 'package:budget_planner/expense_summary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
@@ -16,6 +18,17 @@ class Expenses extends StatefulWidget {
   State<Expenses> createState() {
     return _ExpensesState();
   }
+}
+
+class AppColors {
+  static const Color primary = Color(0xFF1E88E5);
+  static const Color secondary = Color(0xFF00ACC1);
+  static const Color accent = Color(0xFFFF9800);
+  static const Color background = Color(0xFFF5F5F5);
+  static const Color textPrimary = Color(0xFF212121);
+  static const Color textSecondary = Color(0xFF757575);
+  static const Color success = Color(0xFF4CAF50);
+  static const Color error = Color(0xFFF44336);
 }
 
 class _ExpensesState extends State<Expenses> {
@@ -36,35 +49,21 @@ class _ExpensesState extends State<Expenses> {
   final List<double> enteredAmounts = [];
    double balanceRemained  = 0;
   void _obtainExpenseSummary() {
-    var depositBalance = double.tryParse(_depositAmountController.text);
+    var depositBalance = double.tryParse(_depositAmountController.text) ?? 0.0;
     double sumOfAmount = 0;
 
-    for (var i = 0; i < _registeredExpenses.length; i++) {
-      enteredAmounts.add(_registeredExpenses[i].amount);
-      sumOfAmount += _registeredExpenses[i].amount;
+    for (var expense in _registeredExpenses) {
+      sumOfAmount += expense.amount;
     }
-    balanceRemained = depositBalance! - sumOfAmount;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(
-          'Summary',
-          textAlign: TextAlign.center,
+    balanceRemained = depositBalance - sumOfAmount;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => WalletSummaryPortal(
+          depositedAmount: depositBalance,
+          amountUsed: sumOfAmount,
+          balanceRemained: balanceRemained,
         ),
-        content: Text(
-          'Amount Used: TZS ${formatter.format(sumOfAmount)}/= \nAmount Remained: TZS ${formatter.format(balanceRemained)}/=',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
-        ),
-        actions: [
-          Center(
-            child: TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('Okay')),
-          )
-        ],
       ),
     );
   }
@@ -90,7 +89,7 @@ class _ExpensesState extends State<Expenses> {
           _registeredExpenses[index] = newExpense;
           balanceRemained -= amountDifference;
         } else {
-          // Show error dialog or snackbar
+          // Show error dialog or snackbar 
           ScaffoldMessenger.of(context).showSnackBar(
            const SnackBar(content: Text('Insufficient balance for this edit')),
           );
@@ -124,60 +123,190 @@ class _ExpensesState extends State<Expenses> {
   }
 
   void _depositAmount() {
-    if (_depositAmountController.text.isEmpty) {
-      showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-                content: const Text(
-                  "Enter Amount ",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (_, controller) => Container(
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: ListView(
+                  controller: controller,
+                  padding: EdgeInsets.all(16),
+                  children: [
+                    _buildCurrentDepositCard(),
+                    SizedBox(height: 20),
+                    _buildDepositInput(),
+                    SizedBox(height: 20),
+                    _buildActionButtons(),
+                  ],
                 ),
-                actions: [
-                  TextField(
-                    controller: _depositAmountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                        label: Text('Deposit Amount'), prefixText: "TZS "),
-                  ),
-                  Center(
-                    child: TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Okay')),
-                  )
-                ],
-              ));
-      return;
-    }
-    if (_depositAmountController.text.isNotEmpty) {
-      showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-                content: Text(
-                  'Deposited Amount: TZS ${formatter.format(double.tryParse(_depositAmountController.text))}/=',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                actions: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TextButton(
-                          onPressed: _resetAmount, child: const Text('Reset Amount')),
-                      TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Okay'))
-                    ],
-                  )
-                ],
-              ));
-    }
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
-   void _resetAmount() {
+
+  Widget _buildHeader() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: Colors.white,
+            radius: 30,
+            child: Text(
+              'U', // First letter of sample username
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Deposit Management',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'Manage your deposits here',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCurrentDepositCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Current Deposit',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'TZS ${formatter.format(double.tryParse(_depositAmountController.text) ?? 0)}',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.success,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDepositInput() {
+    return TextField(
+      controller: _depositAmountController,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(
+        labelText: 'Enter Amount',
+        prefixText: 'TZS ',
+        border: OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context);
+            _showDepositConfirmation();
+          },
+          child: Text('Deposit Amount'),
+          style: ElevatedButton.styleFrom(
+            primary: AppColors.primary,
+            padding: EdgeInsets.symmetric(vertical: 15),
+            minimumSize: Size(double.infinity, 50),
+          ),
+        ),
+        SizedBox(height: 10),
+        OutlinedButton(
+          onPressed: () {
+            Navigator.pop(context);
+            _resetAmount();
+          },
+          child: Text('Reset Amount'),
+          style: OutlinedButton.styleFrom(
+            primary: AppColors.error,
+            side: BorderSide(color: AppColors.error),
+            padding: EdgeInsets.symmetric(vertical: 15),
+            minimumSize: Size(double.infinity, 50),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showDepositConfirmation() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Deposit Confirmation'),
+        content: Text(
+          'Deposited Amount: TZS ${formatter.format(double.tryParse(_depositAmountController.text))}',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Okay'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _resetAmount() {
     final formKey = GlobalKey<FormFieldState>();
     bool isValidAmount = false;
 
@@ -281,7 +410,7 @@ class _ExpensesState extends State<Expenses> {
                       pw.Text('TZS ${formatter.format(expense.amount)}', style: const pw.TextStyle(fontSize: 16)),
                     ],
                   ),
-                  pw.Text(DateFormat('yyyy-MM-dd HH:mm').format(expense.date), style: pw.TextStyle(color: PdfColors.grey700, fontSize: 12)),
+                  pw.Text(DateFormat('yyyy-MM-dd HH:mm').format(expense.date), style:const pw.TextStyle(color: PdfColors.grey700, fontSize: 12)),
                   pw.SizedBox(height: 5),
                 ],
               )).toList(),
@@ -331,7 +460,7 @@ class _ExpensesState extends State<Expenses> {
               ),
               pw.SizedBox(height: 10),
               pw.Center(
-                child: pw.Text('Scan for owner\'s details', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+                child: pw.Text('Scan for owner\'s details', style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
               ),
             ],
           );

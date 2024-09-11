@@ -1,118 +1,182 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:budget_planner/models/expense.dart';
+import 'package:intl/intl.dart';
 
-class ExpenseSummary extends StatelessWidget {
-  final List<Expense> expenses;
+class WalletSummaryPortal extends StatelessWidget {
   final double depositedAmount;
-  final double remainingBalance;
+  final double amountUsed;
+  final double balanceRemained;
 
-  const ExpenseSummary({
-    required this.expenses,
+  WalletSummaryPortal({
     required this.depositedAmount,
-    required this.remainingBalance,
+    required this.amountUsed,
+    required this.balanceRemained,
   });
+
+  final formatter = NumberFormat("#,##0.00", "en_US");
 
   @override
   Widget build(BuildContext context) {
-    final categoryTotals = _calculateCategoryTotals();
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Expense Summary'),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildAmountCard(),
-            SizedBox(height: 20),
-            _buildPieChart(categoryTotals),
-            SizedBox(height: 20),
-            _buildCategoryList(categoryTotals),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAmountCard() {
-    return Card(
-      margin: EdgeInsets.all(16),
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Text('Amount Deposited: \$${depositedAmount.toStringAsFixed(2)}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text('Remaining Balance: \$${remainingBalance.toStringAsFixed(2)}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPieChart(Map<Category, double> categoryTotals) {
-    return Container(
-      height: 300,
-      child: PieChart(
-        PieChartData(
-          sections: categoryTotals.entries.map((entry) {
-            return PieChartSectionData(
-              color: _getCategoryColor(entry.key),
-              value: entry.value,
-              title: '${entry.key.toString().split('.').last}\n${entry.value.toStringAsFixed(2)}',
-              radius: 100,
-              titleStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-            );
-          }).toList(),
-          sectionsSpace: 0,
-          centerSpaceRadius: 40,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryList(Map<Category, double> categoryTotals) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      itemCount: categoryTotals.length,
-      itemBuilder: (context, index) {
-        final category = categoryTotals.keys.elementAt(index);
-        final amount = categoryTotals[category]!;
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: _getCategoryColor(category),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 200,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text('Wallet Summary'),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.blue.shade800, Colors.blue.shade400],
+                  ),
+                ),
+              ),
+            ),
           ),
-          title: Text(category.toString().split('.').last),
-          trailing: Text('\$${amount.toStringAsFixed(2)}'),
-        );
-      },
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSummaryCard(),
+                  SizedBox(height: 24),
+                  Text(
+                    'Expense Breakdown',
+                    style: Theme.of(context).textTheme.headline6,
+                  ),
+                  SizedBox(height: 16),
+                  AspectRatio(
+                    aspectRatio: 1.3,
+                    child: _buildPieChart(),
+                  ),
+                  SizedBox(height: 24),
+                  _buildDetailsList(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Map<Category, double> _calculateCategoryTotals() {
-    final totals = <Category, double>{};
-    for (var expense in expenses) {
-      totals[expense.category] = (totals[expense.category] ?? 0) + expense.amount;
-    }
-    return totals;
+  Widget _buildSummaryCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Summary',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            _buildSummaryRow('Deposited Amount', depositedAmount, Colors.green),
+            SizedBox(height: 8),
+            _buildSummaryRow('Amount Used', amountUsed, Colors.red),
+            SizedBox(height: 8),
+            Divider(),
+            SizedBox(height: 8),
+            _buildSummaryRow('Balance Remained', balanceRemained, Colors.blue),
+          ],
+        ),
+      ),
+    );
   }
 
-  Color _getCategoryColor(Category category) {
-    switch (category) {
-      case Category.food:
-        return Colors.red;
-      case Category.travel:
-        return Colors.blue;
-      case Category.leisure:
-        return Colors.green;
-      case Category.work:
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
+  Widget _buildSummaryRow(String label, double amount, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label),
+        Text(
+          'TZS ${formatter.format(amount)}',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPieChart() {
+    return PieChart(
+      PieChartData(
+        sectionsSpace: 0,
+        centerSpaceRadius: 40,
+        sections: [
+          PieChartSectionData(
+            color: Colors.red.shade400,
+            value: amountUsed,
+            title: '${((amountUsed / depositedAmount) * 100).toStringAsFixed(1)}%',
+            radius: 100,
+            titleStyle: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          PieChartSectionData(
+            color: Colors.green.shade400,
+            value: balanceRemained,
+            title: '${((balanceRemained / depositedAmount) * 100).toStringAsFixed(1)}%',
+            radius: 100,
+            titleStyle: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Details',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 16),
+        _buildDetailItem('Amount Used', amountUsed, Colors.red.shade400),
+        SizedBox(height: 8),
+        _buildDetailItem('Balance Remained', balanceRemained, Colors.green.shade400),
+      ],
+    );
+  }
+
+  Widget _buildDetailItem(String label, double amount, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(label),
+        ),
+        Text(
+          'TZS ${formatter.format(amount)}',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
   }
 }

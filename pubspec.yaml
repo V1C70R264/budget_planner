@@ -49,6 +49,7 @@ dependencies:
   open_file: ^3.5.3
   url_launcher: ^6.1.10
   flutter_pdfview: ^1.2.5
+  flutter_svg: ^2.0.10+1
   
 dev_dependencies:
   flutter_test:

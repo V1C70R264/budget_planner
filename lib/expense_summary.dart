@@ -7,7 +7,7 @@ class WalletSummaryPortal extends StatelessWidget {
   final double amountUsed;
   final double balanceRemained;
 
-  WalletSummaryPortal({
+   WalletSummaryPortal({
     required this.depositedAmount,
     required this.amountUsed,
     required this.balanceRemained,
@@ -18,46 +18,57 @@ class WalletSummaryPortal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.blue.shade800,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          'Wallet Summary',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
-            expandedHeight: 200,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text('Wallet Summary'),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.blue.shade800, Colors.blue.shade400],
-                  ),
+          SliverToBoxAdapter(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.blue.shade800,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
                 ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+                child: _buildSummaryCard(),
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSummaryCard(),
-                  SizedBox(height: 24),
-                  Text(
-                    'Expense Breakdown',
-                    style: Theme.of(context).textTheme.headline6,
-                  ),
-                  SizedBox(height: 16),
-                  AspectRatio(
-                    aspectRatio: 1.3,
-                    child: _buildPieChart(),
-                  ),
-                  SizedBox(height: 24),
-                  _buildDetailsList(),
-                ],
-              ),
+          SliverPadding(
+            padding: const EdgeInsets.all(16.0),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                SizedBox(height: 24),
+                Text(
+                  'Expense Breakdown',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                SizedBox(height: 16),
+                AspectRatio(
+                  aspectRatio: 1.3,
+                  child: _buildPieChart(),
+                ),
+                SizedBox(height: 24),
+                _buildDetailsList(),
+              ]),
             ),
           ),
         ],
@@ -152,7 +163,11 @@ class WalletSummaryPortal extends StatelessWidget {
         SizedBox(height: 16),
         _buildDetailItem('Amount Used', amountUsed, Colors.red.shade400),
         SizedBox(height: 8),
+        _buildProgressIndicator(amountUsed, Colors.red.shade400),
+        SizedBox(height: 16),
         _buildDetailItem('Balance Remained', balanceRemained, Colors.green.shade400),
+        SizedBox(height: 8),
+        _buildProgressIndicator(balanceRemained, Colors.green.shade400),
       ],
     );
   }
@@ -175,6 +190,25 @@ class WalletSummaryPortal extends StatelessWidget {
         Text(
           'TZS ${formatter.format(amount)}',
           style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressIndicator(double amount, Color color) {
+    double percentage = (amount / depositedAmount).clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        LinearProgressIndicator(
+          value: percentage,
+          backgroundColor: Colors.grey.shade200,
+          valueColor: AlwaysStoppedAnimation<Color>(color),
+        ),
+        SizedBox(height: 4),
+        Text(
+          '${(percentage * 100).toStringAsFixed(1)}%',
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
         ),
       ],
     );

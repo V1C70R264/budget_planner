@@ -160,8 +160,8 @@ class _ExpensesState extends State<Expenses> {
 
   Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.all(Radius.circular(20)),
       ),
@@ -169,11 +169,11 @@ class _ExpensesState extends State<Expenses> {
         children: [
           Row(
             children: [
-              CircleAvatar(
+             const CircleAvatar(
                 backgroundColor: Colors.white,
                 radius: 30,
                 child: Text(
-                  'VK', // Replace with actual user's initials
+                  'VS', // Replace with actual user's initials
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -181,13 +181,13 @@ class _ExpensesState extends State<Expenses> {
                   ),
                 ),
               ),
-              SizedBox(width: 16),
+             const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Welcome, Victor Kiptoo!', // Replace with actual user's full name
+                   const Text(
+                      'Welcome, Victor Shirima!', // Replace with actual user's full name
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -207,7 +207,7 @@ class _ExpensesState extends State<Expenses> {
               ),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Card(
             elevation: 4,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -269,24 +269,25 @@ class _ExpensesState extends State<Expenses> {
         
         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         decoration: InputDecoration(
+          labelText: 'Enter Amount',
           labelStyle: const TextStyle(color: AppColors.textSecondary),
           //prefixIcon: const Icon(Icons.attach_money, color: AppColors.primary),
           prefixText: 'TZS ',
-            prefixStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+          prefixStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
             borderSide: BorderSide.none,
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: AppColors.primary, width: 1),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.grey, width: 1),
+            borderSide: const BorderSide(color: Colors.grey, width: 1),
           ),
         ),
       ),
@@ -294,32 +295,33 @@ class _ExpensesState extends State<Expenses> {
   }
 
   Widget _buildActionButtons() {
-    return Column(
+    return Row(
       children: [
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-            _showDepositConfirmation();
-          },
-          child: Text('Deposit Amount'),
-          style: ElevatedButton.styleFrom(
-            foregroundColor: AppColors.primary,
-            padding: EdgeInsets.symmetric(vertical: 15),
-            minimumSize: Size(double.infinity, 50),
+        Expanded(
+          child: TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // _showDepositConfirmation();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              padding: EdgeInsets.symmetric(vertical: 15),
+            ),
+            child: const Text('Deposit Amount'),
           ),
         ),
-        SizedBox(height: 10),
-        OutlinedButton(
-          onPressed: () {
-            Navigator.pop(context);
-            _resetAmount();
-          },
-          child: Text('Reset Amount'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.error,
-            side: BorderSide(color: AppColors.error),
-            padding: EdgeInsets.symmetric(vertical: 15),
-            minimumSize: Size(double.infinity, 50),
+        const SizedBox(width: 10),
+        Expanded(
+          child: TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _resetAmount();
+            },
+            child: Text('Reset Amount'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.error,
+              padding: EdgeInsets.symmetric(vertical: 15),
+            ),
           ),
         ),
       ],
@@ -333,12 +335,12 @@ class _ExpensesState extends State<Expenses> {
         title: Text('Deposit Confirmation'),
         content: Text(
           'Deposited Amount: TZS ${formatter.format(double.tryParse(_depositAmountController.text))}',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Okay'),
+            child: const Text('Okay'),
           ),
         ],
       ),
